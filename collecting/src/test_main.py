@@ -1,10 +1,10 @@
 from main import (
     VLilleStationRecord, extract_stations_records, IleviaVLilleStationDataProvider,
-    FetchAgent, Json, NoRecordsKeyInJsonError, WebAPIFetchAgent, WebRetriever
+    FetchAgent, Json, NoRecordsKeyInJsonError, WebAPIFetchAgent, WebRetriever, JsonKey,
+    JsonValue
     )
 from typing import  List, Dict
 import pytest
-import requests
 from requests.models import Response
 
 class TestExtractStationsRecord:
@@ -18,7 +18,7 @@ class TestExtractStationsRecord:
 
         expected = [station_mel, station_pont_de_labbaye]
 
-        records: List[Dict] = [
+        records: List[Dict[JsonKey, JsonValue]] = [
             {
                 "@id": "7761385",
                 "id": "1",
