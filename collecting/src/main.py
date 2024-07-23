@@ -45,15 +45,14 @@ class WebRetriever(ABC):
         pass
 
 class RequestsWebRetriever(WebRetriever):
-    def __init__(self) -> None:
+    def __init__(self, url: str) -> None:
+        self.url = url
         super().__init__()
     
     def retrieve(self) -> Response:
         response = Response()
         try:
-            #TODO: use env variable
-            url = "https://data.lillemetropole.fr/data/ogcapi/collections/vlille_temps_reel/items?f=json&limit=-1"
-            response = requests.get(url)
+            response = requests.get(self.url)
             response.raise_for_status()
 
             return response
@@ -82,8 +81,6 @@ class WebAPIFetchAgent(FetchAgent):
             print(f"JSON decoding error: {e}")
             return Json(json_value={})
 
-
-
 class NoRecordsKeyInJsonError(Exception):
     def __init__(self) -> None:
         self.message = "No Records Key Found in Json"
@@ -96,13 +93,12 @@ class IleviaVLilleStationDataProvider(VLilleStationDataProvider):
     def fetch_station_datas(self) -> List[VLilleStationRecord]:
         try:
             json: Json = self.fetch_agent.fetch()
-            records = json.json_value["records"]
 
-            return extract_stations_records(records)
+            return extract_stations_records(json.json_value["records"])
         except KeyError:
             raise NoRecordsKeyInJsonError()
 
-def extract_stations_records(records: List[Dict]) -> List[VLilleStationRecord]:
+def extract_stations_records(records: List[Dict[JsonKey, JsonValue]]) -> List[VLilleStationRecord]:
     stations_records: List[VLilleStationRecord] = []    
     
     for record in records:
@@ -112,3 +108,14 @@ def extract_stations_records(records: List[Dict]) -> List[VLilleStationRecord]:
             print(f"Validation error for record {record}: {e}")
 
     return stations_records
+
+
+if __name__ == "__main__":
+    
+    retriever = RequestsWebRetriever("https://data.lillemetropole.fr/data/ogcapi/collections/vlille_temps_reel/items?f=json&limit=-1")
+    fetch_agent = WebAPIFetchAgent(retriever)
+    service = IleviaVLilleStationDataProvider(fetch_agent)
+    
+    vlille_records = service.fetch_station_datas()
+
+    print(vlille_records)
